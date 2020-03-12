@@ -1,0 +1,52 @@
+{
+	"action":"set",
+	"Interface":{
+		"HOSTNAME":"COM1",
+		"BAUDRATE":"115200"
+	},
+	"IMU":{
+		"RANGE":"2G",
+		"RATE":"1000"
+	},
+	"SDCARD":{
+		"FILESIZE":"1024"
+	}
+}
+
+# start 
+{
+"action":"start"
+}
+
+#stop
+{
+"action":"stop"
+}
+
+# set parameter
+{
+	"function":"param",
+	"action":"set",
+	"interface":"COM1",
+	"IMU":{
+		"RANGE":"2G",
+		"RATE":"1000"
+	},
+	"SDCARD":{
+		"FILESIZE":"1024"
+	}
+}
+
+#get parameter
+{
+	"function":"param",
+	"action":"get",
+	"item":["MODULE","WLAN"]
+}
+
+#data packet
+{
+	"pid":xx,
+	"count":xx,
+	"data":base64 array
+}

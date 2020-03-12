@@ -1,0 +1,41 @@
+{
+	"Interfaces":[
+	{
+		"TYPE":"SERIAL",
+		"HOSTNAME":"COM1",
+		"BAUDRATE":115200,
+		"MODEL":"SensorNode",
+		"NODE":{
+			"MODE":"VNODE"
+		},
+		"ACCEL":{
+			"RANGE":"2G",
+			"RATE":"1000",
+			"HPF":"0"
+		},
+		"TIME":{
+			"SAMPLE NUMBER":"1000",
+			"SAMPLE PERIOD":"1000"
+		}
+	},
+	{
+		"TYPE":"SERIAL",
+		"HOSTNAME":"COM50",
+		"BAUDRATE":115200,
+		"MODEL":"SensorNode",
+		"NODE":{
+			"MODE":"STREAM"
+		},
+		"ACCEL":{
+			"RANGE":"2G",
+			"RATE":"1000",
+			"HPF":"0"
+		},
+		"TIME":{
+			"SAMPLE NUMBER":"1000",
+			"SAMPLE PERIOD":"1000"
+		}
+	}
+	]
+	
+}

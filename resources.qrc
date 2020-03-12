@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="vnode">images/v-node_190725.png</file>
+    </qresource>
+</RCC>
