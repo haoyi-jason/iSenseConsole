@@ -31,7 +31,11 @@ SOURCES += \
     snode_interface.cpp \
     command_server.cpp \
     chartview.cpp \
-    ../../SourceRespo/kissfft/kiss_fft.c
+    ../../SourceRespo/kissfft/kiss_fft.c \
+    filemanage.cpp \
+    modulecontrol.cpp \
+    chartview2.cpp \
+    snchartview.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,11 +43,18 @@ HEADERS += \
     snode_data_parser.h \
     snode_interface.h \
     command_server.h \
-    chartview.h
+    chartview.h \
+    filemanage.h \
+    modulecontrol.h \
+    chartview2.h \
+    snchartview.h
 
 FORMS += \
         mainwindow.ui \
-    chartview.ui
+    chartview.ui \
+    filemanage.ui \
+    modulecontrol.ui \
+    chartview2.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

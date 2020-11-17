@@ -11,6 +11,8 @@
 
 #include "snode_data_parser.h"
 #include "chartview.h"
+#include "filemanage.h"
+#include "chartview2.h"
 
 #define HEADER_SIZE 8
 #define MAGIC   0xabba
@@ -70,7 +72,8 @@ public:
     }
 
     void set_responsed(bool v){
-        tmr->stop();
+        //qDebug()<<Q_FUNC_INFO<<QObject::sender();
+        //tmr->stop();
         if(v){
             emit ret_ok();
             if(m_cmdList.size()){
@@ -135,10 +138,11 @@ public:
 public slots:
     void add_cmd(QByteArray cmd){
 //        QObject *obj = (QObject*)sender();
-        //qDebug()<<Q_FUNC_INFO<<"Sender:"<<QObject::sender();
+        //qDebug()<<Q_FUNC_INFO<<"Sender:"<<m_cmdList.size();
         mutex.lock();
         m_cmdList.append(cmd);
         mutex.unlock();
+       // qDebug()<<Q_FUNC_INFO<<"Sender:"<<m_cmdList.size();
         //if(!m_wait) start();
     }
 
@@ -161,7 +165,7 @@ private slots:
         while(!m_stop){
             if(m_wait){
                 cntr++;
-                if(cntr > 100){
+                if(cntr > 10){
                     m_timeout = true;
                 }
                 if(m_timeout){
@@ -171,20 +175,13 @@ private slots:
                     cntr = 0;
                     m_wait = false;
                     emit timeout();
-                    qDebug()<<"send command timeout";
+                    qDebug()<<"TTTTTT send command timeout";
                 }
             }
             else if(m_cmdList.size()>0){
                 mutex.lock();
                 emit send_command(m_cmdList.first());
-                //tmr->start(m_timeoutMS);
                 mutex.unlock();
-
-//                if(m_timeout){
-//                    retry++;
-//                }else{
-//                    retry = 0;
-//                }
                 m_wait = true;
                 m_timeout = false;
                 cntr = 0;
@@ -202,7 +199,7 @@ private slots:
 //                    }
 //                }
 //            }
-            timer.start(50);
+            timer.start(100);
             loop.exec();
 //            QThread::msleep(10);
         }
@@ -422,6 +419,43 @@ public:
     chartView *chart() const{return m_chart;}
     void autoConfig(){m_configOnConnect = true;}
     QString pidInfo() const {return m_pidInfo;}
+    void setTransferWin(fileManage *win);
+
+    QString connectionString() const{return m_connectionString;}
+    void setConnectionString(QString value){
+        qDebug()<<Q_FUNC_INFO<<value;
+        m_connectionString = value;
+        // parse connection string
+        // COMX:115200 -> set type = serial
+        // 192.xxx.xxx.xx:5100 -> set type = ethernet
+        QRegExp rx1("(COM\\d+):?(\\d+)?");
+        QRegExp rx2("(\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3})?:?(\\d+)?");
+        rx1.setCaseSensitivity(Qt::CaseInsensitive);
+        if(rx1.indexIn(m_connectionString)!=-1){
+            qDebug()<<"Serial interface:"<<rx1.cap(1);
+            if(rx1.cap(1).isNull()) return;
+            m_commType = COMM_SERIAL;
+            m_hostName = rx1.cap(1).trimmed();
+            if(!rx1.cap(2).isEmpty()){
+                qDebug()<<"Baud"<<rx1.cap(2);
+                m_portNum = rx1.cap(2).toInt();
+            }
+        }
+
+        if(rx2.indexIn(m_connectionString) != -1){
+            qDebug()<<"TCP interface:"<<rx2.cap(1);
+            if(rx2.cap(1).isNull()) return;
+            m_commType = COMM_SOCKET;
+            m_hostName = rx2.cap(1);
+            if(!rx2.cap(2).isEmpty()){
+             qDebug()<<"Port:"<<rx2.cap(2);
+             m_portNum = rx2.cap(2).toInt();
+            }
+        }
+
+
+
+    }
 
 Q_SIGNALS:
     //void newData(QString host,QByteArray data);
@@ -444,43 +478,30 @@ public slots:
 //    virtual void setConfigItem(QString name);
 //    virtual void getConfigItem(QString name);
     virtual void setConfigItem();
+    virtual void setConfigItemByID(quint8 id);
     virtual void getConfigItem();
+    virtual void getConfigItemByID(quint8 id);
     //virtual void setConfigContent(QByteArray b){m_configContent = b;}
     void setCodecParam(QString name, QByteArray json);
     void setCodecParam(QByteArray json);
 
-    void setCurrConfigName(const QString &name){
-        qDebug()<<Q_FUNC_INFO;
-        m_currConfigName = name;}
+    void setCurrConfigName(const QString &name);
     void connectToHost();
     void setInterfaceType(QString name){
         qDebug()<<Q_FUNC_INFO;
         m_commType = static_cast<commType>(interface_map.value(name));
     }
     virtual void start_stop();
-    void showChart(){
-        //if(!isOpen()) return;
-        m_chart->setTitle(m_hostName+"-"+m_devName);
-        m_chart->show();
-    }
+    void showChart();
 
     void enableLog(bool v);
     void enableFFT(bool v);
 
-    void setCurrentConfigParam(QString content){
-        switch(m_codecID){
-        case 0:
-            m_codec->setParam(m_currConfigName,content.toLatin1());
-            break;
-        case 1:
-            ((snode_vnode_codec*)m_codec)->setParam(m_currConfigName,content.toLatin1());
-            break;
-        }
-    }
+    void setCurrentConfigParam(QString content);
 
     void setContent(){
         QTextEdit *edt = (QTextEdit*)sender();
-        qDebug()<<Q_FUNC_INFO;
+        //qDebug()<<Q_FUNC_INFO;
         m_tempContent = edt->toPlainText();
     }
 
@@ -494,6 +515,11 @@ public slots:
         m_pidInfo = QString("E:%1/I:%2").arg(e).arg(i);
     }
 
+    void handleFilePacket(quint8 pid, QByteArray b);
+    void handleUnresolvedPacket(quint8 pid, QByteArray b);
+    void handleSensorResult(QStringList names, QVector<float>data);
+    void handleFFTResult(QVector<float>d1,QVector<float>d2,QVector<float>d3);
+    void handleFFTResultDF(QVector<float>d1,QVector<float>d2,QVector<float>d3, float dF);
 private slots:
     void handleIncomingData();
 private:
@@ -521,6 +547,7 @@ public:
     quint8 m_currConfigItem;
     bool m_isActive; // data transfer or not
     chartView *m_chart;
+    chartView2 *m_cvWave,*m_cvFFT;
     QString m_currConfigName;
    // binPacket *mPacketValid;
     QString m_tempContent;
@@ -530,6 +557,12 @@ public:
     bool m_stream;
     bool m_configOnConnect;
     QString m_pidInfo;
+    fileManage *mFileTransferWin;
+    QVector<float> m_seriesData[6];
+    QStringList m_seriesNames;
+    int m_recordSize;
+    float m_accScale, m_gyroScale;
+    QString m_connectionString;
 };
 
 class snode_interface_model:public QAbstractTableModel{

@@ -4,7 +4,7 @@
 #include <QtDebug>
 #include <QAbstractListModel>
 #include <QPushButton>
-#
+#include "chartview2.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -374,7 +374,7 @@ void MainWindow::handle_device_model_update(QString name, int id)
     int r = m_ifmodel->getItemId(name);
     if(r == -1) return;
 
-    QModelIndex idx = m_ifmodel->index(r,5);
+    QModelIndex idx = m_ifmodel->index(r,3);
     //qDebug()<<"Index:"<<idx;
     QComboBox *cbo = qobject_cast<QComboBox*>(ui->tableView->indexWidget(idx));
 
@@ -421,7 +421,7 @@ void MainWindow::add_interface(int type, QString hostName, int port)
     else
         cbo->setCurrentIndex(0);
     cbo->setProperty("ID",row);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,0),cbo);
+    //ui->tableView->setIndexWidget(m_ifmodel->index(row,0),cbo);
 
     connect(btn,&QPushButton::clicked,this,&MainWindow::handle_sonde_connect);
     connect(cbo,SIGNAL(currentIndexChanged(int)),this,SLOT(handle_snode_type_changed(int)));
@@ -582,14 +582,14 @@ void MainWindow::on_action_Add_triggered()
     cbo->addItems(d->supportInterface());
     cbo->setCurrentIndex(cbo->findText(d->currentInterface()));
     cbo->setProperty("ID",row);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,1),cbo);
-    connect(cbo,&QComboBox::currentTextChanged,d,&snode_interface::setInterfaceType);
+    //ui->tableView->setIndexWidget(m_ifmodel->index(row,1),cbo);
+    //connect(cbo,&QComboBox::currentTextChanged,d,&snode_interface::setInterfaceType);
 
     cbo = new QComboBox;
     cbo->addItems(d->codec_configs());
     cbo->setCurrentIndex(cbo->findText("MODULE"));
     cbo->setProperty("ID",row);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,5),cbo);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,3),cbo);
     connect(cbo,&QComboBox::currentTextChanged,d,&snode_interface::setCurrConfigName);
     ui->txtSetting->setText(d->getCodecParam(cbo->currentText().trimmed()));
 
@@ -597,39 +597,39 @@ void MainWindow::on_action_Add_triggered()
     btn->setProperty("ID",row);
     //connect(btn,&QPushButton::clicked,this,&MainWindow::handle_snode_get_param);
     connect(btn,&QPushButton::clicked,d,&snode_interface::getConfigItem);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,6),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,4),btn);
 
     btn = new QPushButton("SET");
     //btn->setEnabled(false);
     btn->setProperty("ID",row);
     connect(btn,&QPushButton::clicked,d,&snode_interface::setConfigItem);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,7),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,5),btn);
 
     btn = new QPushButton("START");
     btn->setProperty("ID",row);
     //btn->setEnabled(false);
     connect(btn,&QPushButton::clicked,d,&snode_interface::start_stop);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,8),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,6),btn);
 
     btn = new QPushButton("ChartView");
     btn->setProperty("ID",row);
     //btn->setEnabled(false);
     connect(btn,&QPushButton::clicked,d,&snode_interface::showChart);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,9),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,7),btn);
 
     btn = new QPushButton("LOG");
     btn->setCheckable(true);
     //btn->setEnabled(false);
     btn->setProperty("ID",row);
     connect(btn,&QPushButton::clicked,d,&snode_interface::enableLog);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,10),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,8),btn);
 
     btn = new QPushButton("FFT");
     btn->setCheckable(true);
     //btn->setEnabled(false);
     btn->setProperty("ID",row);
     connect(btn,&QPushButton::clicked,d,&snode_interface::enableFFT);
-    ui->tableView->setIndexWidget(m_ifmodel->index(row,11),btn);
+    ui->tableView->setIndexWidget(m_ifmodel->index(row,9),btn);
 
     connect(d,&snode_interface::sendLog,this,&MainWindow::handle_log_message);
     connect(d,&snode_interface::codec_setup_updated,this,&MainWindow::handle_device_setup_update);
@@ -834,5 +834,82 @@ void MainWindow::on_pb_b_clicked()
     if(d){
         d->chart()->setChartType(1);
     }
+
+}
+
+void MainWindow::on_actionTransfer_triggered()
+{
+    QModelIndexList lst = ui->tableView->selectionModel()->selectedRows();
+    if(lst.size() > 0){
+        qDebug()<<"NOF select"<<lst.size();
+        snode_interface *d = m_ifmodel->getItem(lst.at(0).row());
+        if(d != nullptr){
+            fileManage *f = new fileManage;
+            d->setTransferWin(f);
+            f->show();
+        }
+    }
+//    fileManage *f = new fileManage;
+//    f->show();
+}
+
+void MainWindow::on_actionSetRTC_triggered()
+{
+    QModelIndexList lst = ui->tableView->selectionModel()->selectedRows();
+    if(lst.size() > 0){
+        qDebug()<<"NOF select"<<lst.size();
+        snode_interface *d = m_ifmodel->getItem(lst.at(0).row());
+        if(d != nullptr){
+            d->setConfigItemByID(0xe);
+        }
+    }
+
+}
+
+void MainWindow::on_actionBattery_triggered()
+{
+    QModelIndexList lst = ui->tableView->selectionModel()->selectedRows();
+    if(lst.size() > 0){
+        qDebug()<<"NOF select"<<lst.size();
+        snode_interface *d = m_ifmodel->getItem(lst.at(0).row());
+        if(d != nullptr){
+            d->getConfigItemByID(0xd);
+        }
+    }
+
+}
+
+void MainWindow::on_actionGetRTC_triggered()
+{
+    QModelIndexList lst = ui->tableView->selectionModel()->selectedRows();
+    if(lst.size() > 0){
+        qDebug()<<"NOF select"<<lst.size();
+        snode_interface *d = m_ifmodel->getItem(lst.at(0).row());
+        if(d != nullptr){
+            d->getConfigItemByID(0xe);
+        }
+    }
+}
+
+void MainWindow::on_actionGetSensor_triggered()
+{
+    QModelIndexList lst = ui->tableView->selectionModel()->selectedRows();
+    if(lst.size() > 0){
+        qDebug()<<"NOF select"<<lst.size();
+        snode_interface *d = m_ifmodel->getItem(lst.at(0).row());
+        if(d != nullptr){
+            d->getConfigItemByID(0xc);
+        }
+    }
+}
+
+void MainWindow::on_actionView_Record_triggered()
+{
+    chartView2 *cv = new chartView2;
+    cv->show();
+}
+
+void MainWindow::on_actionParseData_triggered()
+{
 
 }

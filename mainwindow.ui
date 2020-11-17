@@ -194,6 +194,7 @@
     <addaction name="action_Delete"/>
     <addaction name="action_Load"/>
     <addaction name="action_Save"/>
+    <addaction name="actionView_Record"/>
    </widget>
    <widget class="QMenu" name="menu_Simulator">
     <property name="enabled">
@@ -218,6 +219,11 @@
     <addaction name="action_Minimize"/>
     <addaction name="separator"/>
     <addaction name="actionE_xit_2"/>
+    <addaction name="actionTransfer"/>
+    <addaction name="actionSetRTC"/>
+    <addaction name="actionBattery"/>
+    <addaction name="actionGetRTC"/>
+    <addaction name="actionGetSensor"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Interface"/>
@@ -292,6 +298,41 @@
   <action name="action_Save">
    <property name="text">
     <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="actionTransfer">
+   <property name="text">
+    <string>Transfer</string>
+   </property>
+  </action>
+  <action name="actionSetRTC">
+   <property name="text">
+    <string>SetRTC</string>
+   </property>
+  </action>
+  <action name="actionBattery">
+   <property name="text">
+    <string>Battery</string>
+   </property>
+  </action>
+  <action name="actionGetRTC">
+   <property name="text">
+    <string>GetRTC</string>
+   </property>
+  </action>
+  <action name="actionGetSensor">
+   <property name="text">
+    <string>GetSensor</string>
+   </property>
+  </action>
+  <action name="actionView_Record">
+   <property name="text">
+    <string>View Record</string>
+   </property>
+  </action>
+  <action name="actionParseData">
+   <property name="text">
+    <string>ParseData</string>
    </property>
   </action>
  </widget>

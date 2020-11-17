@@ -229,19 +229,21 @@ namespace Ui {
 class chartView;
 }
 
+
+
 class chartView : public QDialog
 {
     Q_OBJECT
 
 public:
     const QMap<QString,quint8> chartType_map =
-            QMap<QString,quint8>({{"TREND",0x1},{"TIME",0x0}});
+            QMap<QString,quint8>({{"TIME",0x0},{"TREND",0x1},{"IMU",0x2}});
 
     const QMap<QString,quint8> seriesNameXYZ_map =
-            QMap<QString,quint8>({{"X",0x0},{"Y",0x1},{"Z",0x2}});
+            QMap<QString,quint8>({{"X",0x0},{"Y",0x1},{"Z",0x2},{"GX",0x3},{"GY",0x4},{"GZ",0x5}});
 
     const QMap<QString,quint8> seriesNameRMS_map =
-            QMap<QString,quint8>({{"X-Peak",0x0},{"X-RMS",0x1},{"Y-Peak",0x2},{"Y-RMS",0x3},{"Z-Peak",0x4},{"Z-RMS",0x5}});
+            QMap<QString,quint8>({{"X-Peak",0x0},{"Y-PEAK",0x1},{"Z-Peak",0x2},{"X-RMS",0x3},{"Y-RMS",0x4},{"Z-RMS",0x5}});
 
     explicit chartView(QWidget *parent = nullptr);
     ~chartView();
@@ -259,6 +261,7 @@ public slots:
     void addStream(QByteArray v);
     void updateSeries(QVector<float>);
     void updateWave(QVector<float>,QVector<float>,QVector<float>);
+    void updateGYRO(QVector<float>,QVector<float>,QVector<float>);
     void updateFFT(QVector<float>,QVector<float>,QVector<float>);
     void showTrend(int ,bool);
 private slots:
@@ -277,6 +280,7 @@ private:
     QList<QChart*> m_charts;
     int m_chartType;
     QVector<float> m_seriesData[6];
+    QVector<float> m_seriesFFTData[6];
     int nofXPoints;
     QTimer *m_tmr;
     QMutex m_mutex;

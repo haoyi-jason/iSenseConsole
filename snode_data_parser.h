@@ -34,137 +34,15 @@
 #define MODE_INCLINE    0x03
 #define MODE_DISP       0x04
 
-//class snode_data_parser : public QObject
-//{
-//    Q_OBJECT
-//public:
-//    explicit snode_data_parser(QObject *parent = nullptr);
-//    void set_scale(QVector<double> v){m_scale = v;}
-//    virtual QByteArray parseData(QByteArray b, int packet_len){
-//        return QByteArray();
-//    }
-//    virtual QVector<double> parseScaledData(QByteArray b, int packet_len){
-//        QVector<double> ret;
-//        return ret;
-//    }
-//    int parse_command(QByteArray b){
-//        int ret = 0;
-
-//        return ret;
-//    }
-//    struct int_3b{
-//        union{
-//            qint32 v;
-//            qint8 b[4];
-//        }b;
-//        friend QDataStream& operator<<(QDataStream &out, const int_3b &p){
-//            out << p.b.b[3];
-//            out << p.b.b[2];
-//            out << p.b.b[1];
-//            out << p.b.b[0];
-//            return out;
-//        }
-//        friend QDataStream& operator>>(QDataStream &in, int_3b &p){
-//            in >> p.b.b[3];
-//            in >> p.b.b[2];
-//            in >> p.b.b[1];
-//            p.b.v >>= 12;
-//            return in;
-//        }
-//    };
-
-//signals:
-
-//public slots:
-
-//private:
-//    QVector<double> m_scale;
-//};
-
-//class snode_char_parser:public snode_data_parser{
-//public:
-//    virtual QByteArray parseData(QByteArray b, int packet_len){
-//        float fv;
-//        int nofRecord = packet_len/4;
-//        QVector<float> v;
-//        QDataStream ds(&b,QIODevice::ReadOnly);
-//        QByteArray d;
-//        QDataStream out(&d,QIODevice::WriteOnly);
-//        ds.setByteOrder(QDataStream::LittleEndian);
-//        ds.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//        out.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//        for(int i=0;i<nofRecord;i++){
-//            ds >> fv;
-//            out << fv;
-//        }
-//        qDebug()<<Q_FUNC_INFO<<d.size();
-//        return d;
-//    }
-
-//    virtual QVector<double> parseScaledData(QByteArray b, int packet_len){
-//        QVector<double> ret;
-//        QDataStream ds(&b,QIODevice::ReadOnly);
-//        int nofRecord = packet_len/4;
-//        ds.setByteOrder(QDataStream::LittleEndian);
-//        ds.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//        float v;
-//        for(int i=0;i<nofRecord;i++){
-//            ds >>v;
-//            ret << v;
-//        }
-//        return ret;
-//    }
-//};
-
-//class snode_accel_hir_parser:public snode_data_parser{
-//public:
-//    virtual QByteArray parseData(QByteArray b, int packet_len){
-//        struct int_3b v3b;
-//        float fv;
-//        int nofRecord = packet_len/3;
-//        QDataStream in(&b,QIODevice::ReadOnly);
-//        QByteArray bout;
-//        QDataStream out(&bout,QIODevice::WriteOnly);
-//        //in.setByteOrder(QDataStream::LittleEndian);
-//        //out.setByteOrder(QDataStream::LittleEndian);
-//        //out.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//        QByteArray s;
-//        for(int i=0;i<nofRecord;i++){
-//            s = b.mid(i*3,3);
-//            in >> v3b;
-//            out << v3b;
-//            //qDebug()<<s.toHex()<<QString("%1").arg(v3b.b.v,16);
-//        }
-//        //qDebug()<<Q_FUNC_INFO<<bout.size();
-//        return bout;
-//    }
-//};
-
-//class snode_imu6_parser:public snode_data_parser{
-//public:
-//    virtual QByteArray parseData(QByteArray b, int packet_len){
-//        int nofRecord = packet_len/12;
-//        qint16 int16;
-//        QDataStream in(&b,QIODevice::ReadOnly);
-//        QByteArray bout;
-//        QDataStream out(&bout,QIODevice::WriteOnly);
-//        in.setByteOrder(QDataStream::LittleEndian);
-//        //out.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//        for(int i=0;i<nofRecord;i++){
-//            in >> int16;
-//            out << int16;
-//        }
-//        qDebug()<<Q_FUNC_INFO<<bout.size();
-//        return bout;
-//    }
-//};
 
 
 class snode_codec:public QObject{
     Q_OBJECT
 public:
+//    const QMap<QString,quint8> config_map =
+//            QMap<QString,quint8>({{"MODULE",0x40},{"SERIAL",0x41},{"LAN",0x42},{"WLAN",0x43},{"USER",0x4F}});
     const QMap<QString,quint8> config_map =
-            QMap<QString,quint8>({{"MODULE",0x40},{"SERIAL",0x41},{"LAN",0x42},{"WLAN",0x43},{"USER",0x4F}});
+            QMap<QString,quint8>({{"MODULE",0x40},{"USER",0x4F}});
 
 
 
@@ -188,12 +66,18 @@ public:
         PARAM_SENSOR_BASE_P3,
         PARAM_SENSOR_BASE_P4,
         PARAM_SENSOR_BASE_P5,
+        PARAM_SENSOR_BASE_P6,
+        PARAM_SENSOR_BASE_P7,
+
 //        PARAM_USER_DATA = 0x10,
+        PARAM_MODULE_TRH = 0x0c,
+        PARAM_MODULE_BATTERY = 0x0d,
+        PARAM_MODULE_RTC=0x0e,
         PARAM_MODULE_CONFIG = 0x40,
         PARAM_MODULE_SERIAL,
         PARAM_MODULE_LAN,
         PARAM_MODULE_WLAN,
-        PARAM_USER_DATA = 0x4f,
+        PARAM_USER_DATA = 0x4F,
     };
     Q_ENUM(param_id)
     typedef struct{
@@ -258,7 +142,20 @@ public:
       quint8 passwd2[16];    // sta-mode password, default="53290921"
       quint16 connectionTimeout;   // timeout for searching available AP
       uint8_t secType;      // WEP-WPA2
+      quint8 pairedInfo[32];
     }wireless_param_t;
+
+    typedef struct{
+        quint8 yy,mm,dd,hh,nn,ss;
+    }rtc_param_t;
+
+    typedef struct{
+        quint16 b1,b2;
+    }battery_param_t;
+
+    typedef struct{
+        float temp,rh;
+    }trh_param_t;
 
     explicit snode_codec(QObject *parent = nullptr);
     ~snode_codec();
@@ -277,6 +174,7 @@ public:
     virtual void setParam(int id, QByteArray json);
     virtual void setParam(QString name, QByteArray json);
     virtual bool decodeData();
+    quint8 nodeMode() const{return 0;}
 
     //virtual QStringList configList();
 public:
@@ -306,27 +204,34 @@ public slots:
     void clear(){m_incomingData.clear();}
     virtual void issue_active(bool act);
     virtual void issue_param_save();
+    virtual void issue_file_command(quint8 pid, QByteArray b);
 
 signals:
     void send_command(QByteArray);
     void send_resp(QByteArray);
     void new_data();
     void setupReceived(int);
+    void unResolvedPacket(quint8,QByteArray);
     void modelNameUpdate(QString);
 
     void write_data(QByteArray);
     void send_log(QString);
+    void new_stream(QStringList,QVector<float>);
 };
 
 class snode_vnode_codec:public snode_codec{
     Q_OBJECT
-public:
     const QMap<QString,quint8> config_map =
             QMap<QString,quint8>({
                                      {"MODULE",0x40},{"SERIAL",0x41},{"LAN",0x42},{"WLAN",0x43},{"USER",0x4F},
-                                     {"NODE",0x0},{"ACCEL",0x1},{"TIME",0x2},{"FREQ",0x3}
+                                     {"NODE",0x0},{"ACCEL",0x1},{"IMU",0x2},{"TIME",0x3},{"FREQ",4},{"OLED",5}
                                  });
 
+//    const QMap<QString,quint8> config_map =
+//            QMap<QString,quint8>({
+//                                     {"MODULE",0x40},
+//                                     {"NODE",0x0},{"ACCEL",0x1},{"IMU",0x2},{"TIME",0x3},{"OLED",5}
+//                                 });
     const  QMap<QString, quint8> opmode_map =
             QMap<QString, quint8>({{"STREAM",0},{"VNODE",1},{"FNODE",2},{"OLED",3}});
 
@@ -338,12 +243,16 @@ public:
 
     const  QMap<QString, quint8> fft_window_map =
             QMap<QString, quint8>({{"NONE",0},{"HAMMING",1},{"HANNING",2},{"GAUSS",3}});
+
+
+public:
     QStringList supportConfig() const{
         return QStringList(config_map.keys());
     }
     typedef struct {
       uint8_t opMode;
       uint8_t commType;
+      uint8_t activeSensor;
     }node_param_t;
 
 
@@ -352,10 +261,20 @@ public:
       uint8_t outputrate;
       uint8_t highpassfilter;
       uint8_t intmask;
-      int32_t offset_cali[3];
-      float sensitivity[3];
-      float bias[3];
+//      int32_t offset_cali[3];
+//      float sensitivity[3];
+//      float bias[3];
     }adxl355_config_t;
+    typedef struct{
+        quint8 power;
+        quint8 odr;
+        quint8 range;
+        quint8 lpf;
+    }_imu_element_cfg;
+    typedef struct{
+        _imu_element_cfg accel;
+        _imu_element_cfg gyro;
+    }imu_config_t;
 
     typedef struct{
       uint16_t sampleNumber;
@@ -367,6 +286,12 @@ public:
       uint8_t overlap;
       uint16_t bins;
     }freq_domain_param_t;
+
+    typedef struct{
+        uint16_t base;
+        uint16_t type;
+    }oled_param_t;
+
     struct int_3b{
         union{
             qint32 v;
@@ -399,10 +324,81 @@ public:
     //virtual QStringList configList();
     void enableFFT(bool v){
         m_genFFT = v;
+        //qDebug()<<Q_FUNC_INFO<<v;
     }
-    bool fft() const{return m_genFFT;}
+    bool fft() const{
+        //qDebug()<<Q_FUNC_INFO<<m_genFFT;
+        return m_genFFT;}
 
     quint8 nodeMode() const{return m_nodeParam.opMode;}
+    quint8 activeSensor() const{return m_nodeParam.activeSensor;}
+    float accel_range() const{
+        switch(activeSensor()){
+        case 1:
+            switch(m_adxl.fullscale){
+            case 0x1:return 2;break;
+            case 0x2:return 4;break;
+            case 0x3:return 8;break;
+            default:return 1;break;
+            }
+            break;
+        case 2:
+            switch(m_imuParam.accel.range){
+            case 0x3:return 2;break;
+            case 0x5:return 4;break;
+            case 0x8:return 8;break;
+            case 0xc:return 16;break;
+            default:return 0;
+            }
+            break;
+        case 4:
+            switch(m_imuParam.accel.range){
+            case 0x0:return 2;break;
+            case 0x1:return 16;break;
+            case 0x2:return 4;break;
+            case 0x3:return 8;break;
+            default:return 1;
+            }
+            break;
+        }
+        return 1;
+    }
+    float accel_rate() const{
+        switch(activeSensor()){
+        case 1:
+            return (4000./(1 << m_adxl.outputrate));
+            break;
+        case 4:
+            return 6666./(1 << (m_imuParam.accel.odr-0xa));
+            break;
+        }
+        return 1;
+    }
+    float gyro_range() const{
+        switch(activeSensor()){
+        case 2:
+            return 2000./(1 << m_imuParam.gyro.range);
+            break;
+        case 4:
+            switch(m_imuParam.gyro.range){
+            case 0:return 250;break;
+            case 1:return 125;break;
+            case 2:return 500;break;
+            case 4:return 1000;break;
+            case 6:return 2000;break;
+            default:return 250;break;
+            }
+            break;
+        default:
+            return 0.;
+        }
+        return 0.;
+    }
+    float gyro_rate() const{
+        return accel_rate();
+    }
+
+    void genFFT();
 
 signals:
     void send_command(quint8);
@@ -411,11 +407,14 @@ signals:
     void newSeries(QVector<float>);
     void newWave(QVector<float>,QVector<float>,QVector<float>);
     void newFFT(QVector<float>,QVector<float>,QVector<float>);
+    void newFFTDF(QVector<float>,QVector<float>,QVector<float>,float df);
     void pidUpdate(quint8,quint8);
+    void filePacket(quint8,QByteArray);
+    //void unResolvedPacket(quint8,QByteArray);
 public slots:
-    void issue_param_read(QString name);
-    void issue_param_write(int cmd);
-    void issue_param_write(QString name);
+    virtual void issue_param_read(QString name);
+    virtual void issue_param_write(int cmd);
+    virtual void issue_param_write(QString name);
     virtual void on_decoder_received(QByteArray b);
     virtual void on_encoder_received(QByteArray b);
     void generateRecord(int nofRecord);
@@ -424,20 +423,145 @@ public slots:
 private:
     void parseVNode();
     void parseStream();
-    void genFFT();
+    float hamming(int i, int n);
 
-private:
+public:
     node_param_t m_nodeParam;
     adxl355_config_t m_adxl;
     time_domain_param_t m_timeDomainParam;
     freq_domain_param_t m_freqDomainParam;
-    //QVector<float> m_fftResult[3];
-    QVector<float> m_waveResult[3];
+    imu_config_t m_imuParam;
     float m_adxlScale;
     bool m_genFFT;
+    QVector<float> m_waveResult[6];
+    oled_param_t m_oledParam;
+private:
+    //QVector<float> m_fftResult[3];
 
 };
 
+class snode_vss_codec:public snode_vnode_codec{
+    Q_OBJECT
+    const QMap<QString,quint8> config_map =
+            QMap<QString,quint8>({
+                                     {"MODULE",0x40},{"SERIAL",0x41},{"LAN",0x42},{"WLAN",0x43},{"USER",0x4F},
+                                     {"NODE",0x0},{"ACCEL",0x1},{"IMU",0x2},{"TIME",0x3},{"FREQ",0x4},{"SDC",0x5}
+                                 });
+
+    const  QMap<QString, quint8> opmode_map =
+            QMap<QString, quint8>({{"STREAM",0},{"VNODE",1},{"FNODE",2},{"OLED",3},{"SDLOG",4}});
+
+    const  QMap<QString, quint8> accRange_map =
+            QMap<QString, quint8>({{"WRONG",0},{"2G",1},{"4G",2},{"8G",3}});
+
+    const  QMap<QString, quint8> odrRange_map =
+            QMap<QString, quint8>({{"4000",0},{"2000",1},{"1000",2},{"500",3},{"250",4},{"125",5},{"62.5",6},{"31.25",7}});
+
+    const  QMap<QString, quint8> fft_window_map =
+            QMap<QString, quint8>({{"NONE",0},{"HAMMING",1},{"HANNING",2},{"GAUSS",3}});
+
+    const  QMap<QString, quint8> imuaccRange_map =
+            QMap<QString, quint8>({{"2G",0x3},{"4G",0x5},{"8G",0x8},{"16G",0xc}});
+
+    const  QMap<QString, quint8> imugyroRange_map =
+            QMap<QString, quint8>({{"2000 DPS",0},{"1000 DPS",1},{"500 DPS",2},{"250 DPS",3},{"125 DPS",4}});
+
+public:
+    QStringList supportConfig() const{
+        return QStringList(config_map.keys());
+    }
+
+    typedef struct{
+        uint8_t savdSd;
+        uint8_t prefix[16];
+        uint32_t szConstrain;
+        uint32_t capacity;
+    } sd_config_t;
+
+    explicit snode_vss_codec(QObject *parent = nullptr);
+    virtual QByteArray getParam(int id);
+    virtual QByteArray getParam(QString name);
+    virtual void setParam(int id, QByteArray json);
+    virtual void setParam(QString name, QByteArray json);
+    virtual bool decodeData();
+
+    QVector<int> parseStreamEx(QByteArray b, quint8 sensor);
+
+    float accel_range() const{
+        switch(activeSensor()){
+        case 1:
+            switch(m_adxl.fullscale){
+            case 0x1:return 2;break;
+            case 0x2:return 4;break;
+            case 0x3:return 8;break;
+            default:return 1;break;
+            }
+            break;
+        case 2:
+            switch(m_imuParam.accel.range){
+            case 0x3:return 2;break;
+            case 0x5:return 4;break;
+            case 0x8:return 8;break;
+            case 0xc:return 16;break;
+            default:return 0;
+            }
+            break;
+        }
+        return 1;
+    }
+    float accel_rate() const{
+        switch(activeSensor()){
+        case 1:
+            return (4000./(1 << m_adxl.outputrate));
+            break;
+        case 2:
+            return 1600./(1 << (m_imuParam.accel.odr-0xc));
+            break;
+        }
+        return 1;
+    }
+
+    float gyro_range() const{
+        switch(activeSensor()){
+        case 2:
+            return 2000./(1 << m_imuParam.gyro.range);
+            break;
+        case 4:
+            break;
+        default:
+            return 0.;
+        }
+        return 0.;
+    }
+    float gyro_rate() const{
+        return 1600./(1 << (m_imuParam.accel.odr-0xc));
+    }
+    void genFFT();
+signals:
+    void newGYRO(QVector<float>,QVector<float>,QVector<float>);
+    //void unResolvedPacket(quint8,QByteArray);
+
+public slots:
+    virtual void issue_param_read(QString name);
+    virtual void issue_param_write(int cmd);
+    virtual void issue_param_write(QString name);
+
+    virtual void on_decoder_received(QByteArray b);
+    virtual void on_encoder_received(QByteArray b);
+
+private:
+    void parseVNode();
+    void parseStream();
+
+private:
+//    node_param_t m_nodeParam;
+//    adxl355_config_t m_adxl;
+//    time_domain_param_t m_timeDomainParam;
+//    freq_domain_param_t m_freqDomainParam;
+    sd_config_t m_sdParam;
+//    QVector<float> m_waveResult[6];
+
+};
 
 
 #endif // SNODE_DATA_PARSER_H

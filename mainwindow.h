@@ -5,6 +5,7 @@
 #include "snode_interface.h"
 #include "command_server.h"
 #include "chartview.h"
+#include "filemanage.h"
 namespace Ui {
 class MainWindow;
 }
@@ -76,6 +77,20 @@ private slots:
     void on_pb_a_clicked();
 
     void on_pb_b_clicked();
+
+    void on_actionTransfer_triggered();
+
+    void on_actionSetRTC_triggered();
+
+    void on_actionBattery_triggered();
+
+    void on_actionGetRTC_triggered();
+
+    void on_actionGetSensor_triggered();
+
+    void on_actionView_Record_triggered();
+
+    void on_actionParseData_triggered();
 
 private:
     void closeEvent(QCloseEvent *e);

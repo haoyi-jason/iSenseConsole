@@ -226,6 +226,55 @@ void chartView::setChartType(QString name)
             vnodeDataModel *m = (vnodeDataModel*)ui->tableView->model();
             m->setChart(c);
         }break;
+        case 2:{
+            QChart *c = ui->graphicsView->chart();
+            c->removeAllSeries();
+            if(c->axes(Qt::Horizontal).size() > 0)
+                c->removeAxis(c->axes(Qt::Horizontal).back());
+            if(c->axes(Qt::Vertical).size() > 0)
+                c->removeAxis(c->axes(Qt::Vertical).back());
+            c->setTitle("Waveform");
+            QValueAxis *xa = new QValueAxis;
+            QValueAxis *ya = new QValueAxis;
+            c->addAxis(xa,Qt::AlignBottom);
+            c->addAxis(ya,Qt::AlignLeft);
+            paramModel *m = (paramModel*)ui->tableView_2->model();
+            m->setChart(c);
+            for(int i=0;i<6;i++){
+                QLineSeries *s = new QLineSeries;
+                c->addSeries(s);
+                s->setName(seriesNameXYZ_map.key(i));
+                s->setUseOpenGL(true);
+                s->attachAxis(xa);
+                s->attachAxis(ya);
+            }
+
+            c = ui->graphicsView_2->chart();
+            c->removeAllSeries();
+            if(c->axes(Qt::Horizontal).size() > 0)
+                c->removeAxis(c->axes(Qt::Horizontal).back());
+            if(c->axes(Qt::Vertical).size() > 0)
+                c->removeAxis(c->axes(Qt::Vertical).back());
+            c->setTitle("FFT");
+            xa = new QValueAxis;
+            ya = new QValueAxis;
+            c->addAxis(xa, Qt::AlignBottom);
+            c->addAxis(ya,Qt::AlignLeft);
+            m = (paramModel*)ui->tableView_3->model();
+            m->setChart(c);
+            for(int i=0;i<3;i++){
+                QLineSeries *s = new QLineSeries;
+                c->addSeries(s);
+                s->setName(seriesNameXYZ_map.key(i));
+                s->setUseOpenGL(true);
+                s->attachAxis(xa);
+                s->attachAxis(ya);
+            }
+
+            m_tmr->start(100);
+            ///ui->graphicsView_2->setChart(c);
+            ui->graphicsView_2->setVisible(true);
+        }break;
         }
     }
 }
@@ -242,7 +291,7 @@ void chartView::addRecord(QList<float> v)
     QDateTimeAxis *dx = (QDateTimeAxis*)c->axes(Qt::Horizontal).back();
     for(int i=0;i<6;i++){
         //qDebug()<<m_series[i]->count();
-        float fv = v.at(i);
+        float fv = v.at(i)*9.81;
         QPointF pt = QPointF(epoch,fv);
         if(i < c->series().count()){
             s = (QLineSeries*)c->series().at(i);
@@ -250,7 +299,7 @@ void chartView::addRecord(QList<float> v)
         }
         dataModel *d = m_dataModel->getItem(i);
         if(d != nullptr){
-            d->value = fv*9.81;
+            d->value = fv;
         }
         quint64 cepoch = dx->max().toMSecsSinceEpoch();
         if(cepoch > epoch){
@@ -299,19 +348,23 @@ void chartView::updateWave(QVector<float>x, QVector<float> y, QVector<float> z)
     m_seriesData[1]=y;
     m_seriesData[2]=z;
 
-//    for(int i=0;i<3;i++){
-//        if(m_seriesData[i].size() > nofXPoints){
-//            m_seriesData[i].remove(0,m_seriesData[i].size()-nofXPoints);
-//        }
-//    }
+}
+
+void chartView::updateGYRO(QVector<float>x, QVector<float> y, QVector<float> z)
+{
+    //qDebug()<<Q_FUNC_INFO;
+    m_seriesData[3]=x;
+    m_seriesData[4]=y;
+    m_seriesData[5]=z;
+
 }
 
 void chartView::updateFFT(QVector<float>x, QVector<float> y, QVector<float> z)
 {
 
-    m_seriesData[3]=x;
-    m_seriesData[4]=y;
-    m_seriesData[5]=z;
+    m_seriesFFTData[0]=x;
+    m_seriesFFTData[1]=y;
+    m_seriesFFTData[2]=z;
 }
 void chartView::addStream(QByteArray b)
 {
@@ -356,27 +409,22 @@ void chartView::addStream(QByteArray b)
 
 void chartView::handle_chart_update()
 {
-    //qDebug()<<Q_FUNC_INFO;
-    //QElapsedTimer timer;
-   // timer.start();
     m_mutex.lock();
     QList<QPointF> pts;
+
     QChart *c = ui->graphicsView->chart();
     QLineSeries *s;
-    for(int i=0;i<3;i++){
-        //qDebug()<<Q_FUNC_INFO<<m_seriesData[i].size();
-        //timer.restart();
+    int seriesCount = m_chartType==0?3:6;
+    QVector<float> dat;
+    for(int i=0;i<seriesCount;i++){
+        dat = m_seriesData[i];
         pts.clear();
-//        for(int i=0;i<1000;i++){
-//            pts.append(QPointF(i,QRandomGenerator::global()->bounded(40)));
-//        }
-        for(int pt=0;pt<m_seriesData[i].size();pt++){
-            pts.append(QPointF(pt,m_seriesData[i].at(pt)));
+        for(int pt=0;pt<dat.size();pt++){
+            pts.append(QPointF(pt,dat.at(pt)));
         }
         if(i < c->series().count()){
             s = (QLineSeries*)c->series().at(i);
             s->replace(pts);
-//            m_series[i]->replace(pts);
         }
     }
 
@@ -384,10 +432,10 @@ void chartView::handle_chart_update()
     ui->graphicsView->viewport()->update();
 
     c = ui->graphicsView_2->chart();
-    for(int i=0;i<3;i++){
+    for(int i=0;i<seriesCount;i++){
         pts.clear();
-        for(int pt=0;pt<m_seriesData[i+3].size();pt++){
-            pts.append(QPointF(pt,m_seriesData[i+3].at(pt)));
+        for(int pt=0;pt<m_seriesFFTData[i].size();pt++){
+            pts.append(QPointF(pt,m_seriesFFTData[i].at(pt)));
         }
         if(i < c->series().count()){
             s = (QLineSeries*)c->series().at(i);
